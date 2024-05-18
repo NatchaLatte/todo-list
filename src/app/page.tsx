@@ -1,113 +1,141 @@
-import Image from "next/image";
+"use client"
+import { MdAddBox } from "react-icons/md";
+import { GrClearOption } from "react-icons/gr";
+import { RiDeleteBin7Fill } from "react-icons/ri";
+import { CgMoreR } from "react-icons/cg";
+import { useEffect, useState } from "react";
+import Swal from 'sweetalert2';
 
-export default function Home() {
+const Home = () => {
+  const [data, setData] = useState([]);
+  const [message, setMessage] = useState("");
+  const [update, setUpdate] = useState(true);
+
+  useEffect(() => {
+    fetch("/api")
+    .then(res => res.json())
+    .then(data => setData(data))
+  }, [update])
+
+  const Toast = Swal.mixin({
+    toast: true,
+    position: "top-end",
+    showConfirmButton: false,
+    timer: 1000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+      toast.onmouseenter = Swal.stopTimer;
+      toast.onmouseleave = Swal.resumeTimer;
+    }
+  });
+
+  const handleAdd = () => {
+    const informationMessage = message.trim()
+    if(informationMessage.length > 0){
+      Swal.fire({
+        title: "คุณต้องการเพิ่มข้อมูลใหม่ ?",
+        showCancelButton: true,
+        confirmButtonText: "ใช่",
+        cancelButtonText: "ยกเลิก"
+      }).then((result) => {
+        if(result.isConfirmed){
+          fetch("/api", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ data: informationMessage })
+          })
+          .then((res) => {
+            if(res.status === 200){
+              setMessage("");
+              setUpdate(!update)
+              Toast.fire({
+                icon: "success",
+                title: "เพิ่มข้อมูลสำเร็จ"
+              });
+            }
+          })
+        }
+      })
+    }else{
+      setMessage("");
+      Toast.fire({
+        icon: "warning",
+        title: "กรุณากรอกข้อมูล"
+      });
+    }
+  }
+
+  const handleClear = () => {
+    setMessage("");
+    Toast.fire({
+      icon: "success",
+      title: "ล้างข้อมูลสำเร็จ"
+    });
+  }
+
+  const handleDelete = (id: number) => {
+    Swal.fire({
+      title: "คุณต้องการลบข้อมูล ?",
+      showCancelButton: true,
+      confirmButtonText: "ใช่",
+      cancelButtonText: "ยกเลิก"
+    }).then((result) => {
+      if(result.isConfirmed){
+        fetch("/api", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: id })
+        })
+        .then((res) => {
+          if(res.status === 200){
+            setUpdate(!update)
+            Toast.fire({
+              icon: "success",
+              title: "ลบข้อมูลสำเร็จ"
+            });
+          }
+        })
+      }
+    })
+  }
+
+  const handleMore = (message: string) => {
+    Swal.fire({
+      icon: "info",
+      text: message,
+      confirmButtonText: "ยุบ"
+    });
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <main className="h-screen flex justify-center items-center">
+      <div className="flex flex-col">
+        <h1 className="text-4xl text-center dark:text-white">TODO<span className="text-red-500">L</span>IST ลิขิตชีวิตเรา</h1>
+        <input value={message} onChange={message => setMessage(message.target.value)} type="text" placeholder="สิ่งที่อยากทำ..." className="dark:text-black dark:bg-slate-100 my-4 input input-bordered input-primary w-full self-center" />
+        <div className="flex flex-row">
+          <button onClick={handleAdd} className="btn flex-1 btn-primary mr-2 dark:text-white"><MdAddBox/> เพิ่ม</button>
+          <button onClick={handleClear} className="btn flex-1 btn-neutral ml-2 dark:text-white"><GrClearOption/> ล้าง</button>
         </div>
-      </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+        <div className={data.length ? "overflow-y-scroll h-auto max-h-56 mt-4" : ""}>
+        {data.length ? data.map((data: any) => {
+        return (
+        <div key={data.id} className="shadow mb-4 dark:bg-white rounded">
+          <div className="flex flex-row items-center justify-between p-3">
+            <p className="text-lg w-60 truncate dark:text-black">{data.text}</p>
+            <button onClick={() => handleMore(data.text)} className="mx-2 btn btn-info text-white"><CgMoreR /> แสดงเพิ่มเติม</button>
+            <button onClick={() => { handleDelete(data.id) }} className="btn btn-error text-white"><RiDeleteBin7Fill /> ลบ</button>
+          </div>
+        </div>
+        )
+      }) : <progress className="progress progress-primary w-full"></progress>}
+        </div>
       </div>
     </main>
   );
-}
+};
+
+export default Home;
