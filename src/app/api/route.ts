@@ -8,6 +8,7 @@ export async function GET() {
         connection.release();
         return NextResponse.json(rows, { status: 200 })
     }catch(error: any){
+        console.log(error)
         return NextResponse.json({ error: error }, { status: 500 });
     }
 }
